@@ -42,20 +42,54 @@ console.log("Setting UUID to " + uuid);
 
 var pubnub = require("pubnub")({
     ssl: true,
-    publish_key: PNPublishKey,
-    subscribe_key: PNSubscribeKey,
+    publishKey: PNPublishKey,
+    subscribeKey: PNSubscribeKey,
     uuid: uuid
 });
 
 var PNPublish = function (ehEvent) {
-    console.log('Event Received from EHOutClient, Publishing via PubNub: ');
-    console.log(JSON.stringify(ehEvent.body));
-    console.log("");
+    // console.log('Event Received from Egress EH, Publishing to PN: ');
+    // console.log(JSON.stringify(ehEvent.body));
+    // console.log("");
 
-    pubnub.publish({
-        channel: PNPubChannel,
-        message: ehEvent.body
-    });
+    if (Array.isArray(ehEvent.body)){
+
+        ehEvent.body.forEach(function(element){
+
+            pubnub.publish({
+                channel: PNPubChannel,
+                message: element
+            },
+            function(status, response) {
+                if (status.error) {
+                    console.log("PN Array Element Publish Error: ", status);
+                    console.log("Message causing error: ", element);
+                }
+                else {
+                    console.log("message published with server response: ", response);
+                    console.log("Message published successfully: ", element);
+                }
+            });
+        });
+
+    } else {
+
+        console.log("No array detected.");
+        pubnub.publish({
+            channel: PNPubChannel,
+            message: ehEvent.body
+        },
+        function(status, response) {
+            if (status.error) {
+                console.log("PN Array Element Publish Error: ", status);
+                console.log("Message causing error: ", ehEvent.body);
+            }
+            else {
+                console.log("message published with server response: ", response);
+                console.log("Message published successfully: ", ehEvent.body);
+            }
+        });
+    }
 };
 
 var receiveAfterTime = Date.now() - 0;
@@ -65,7 +99,7 @@ var Promise = require('bluebird');
 
 
 var printError = function (err) {
-    console.log("Error: " + err.message);
+    console.log("Event Hub Error: " + err.message);
 };
 
 /**************                                 Create the Ingress Path                                 */
@@ -80,26 +114,36 @@ EHInClient.open()
 // Create the sender, and then, subscribe via PN, forwarding all messages to this new subscriber to the sender.
 
 EHInClient.createSender().then(function (sender) {
-    pubnub.subscribe({
-        channel: PNSubChannel,
-        message: function (message) {
-            console.log("Received and forwarding message: " + JSON.stringify(message, null, 4));
+    pubnub.addListener({
+        message: function(message) {
+            console.log("Received Message: ", JSON.stringify(message, null, 4));
+            // console.log("Forwarding from PN Subscriber to Ingress EH: " + JSON.stringify(message, null, 4));
             sender.send(message);
-        }
+        },
+        status: function(message) {
+            printError(message); // this is more than just errors - all PN status events
+        },
+        //,presence: function(message) {
+        //     // optionally, handle presence
+        // }
+    });
+
+    pubnub.subscribe({
+        channels: [PNSubChannel]
     });
 
     if (PNAnnounceChannel && PNAnnounceChannel != "disabled") {
-
-        pubnub.state({
-            channel: PNAnnounceChannel,
+        pubnub.setState({
+            channels: [PNAnnounceChannel],
             state: {
                 EHInConnectionString: EHInConnectionString,
                 EHOutConnectionString: EHOutConnectionString
             }
+        },
+        function (message) {
+            // optionally, handle status, response
         });
-
     }
-
 });
 
 /**************                                 Create the Egress Path                                 */

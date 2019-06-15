@@ -1,8 +1,8 @@
-﻿{
+{
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.1",
   "parameters": {
-    "adminUserName": {
+    "adminUsername": {
       "type": "string",
       "metadata": {
         "description": "Admin user name for the VMs"
@@ -46,6 +46,22 @@
       "metadata": {
         "description": "The Windows version for the VM. This will pick a fully patched image of this given Windows version. Allowed values: 2008-R2-SP1, 2012-Datacenter, 2012-R2-Datacenter."
       }
+    },
+    "clouderaTags": {
+      "type": "object"
+    },
+    "tableauTags": {
+      "type": "object"
+    },
+    "quickstartTags": {
+      "type": "object"
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
     }
   },
   "variables": {
@@ -67,35 +83,43 @@
     {
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[variables('storageAccountName')]",
-      "apiVersion": "[parameters('resourceAPIVersion')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "comments": "Utilizes the Cloudera master storage account",
+      "tags": {
+        "quickstartName": "[parameters('quickstartTags').name]",
+        "provider": "[parameters('clouderaTags').provider]"
+      },
       "properties": {
         "accountType": "[parameters('storageAccount').type]"
       }
     },
     {
-      "apiVersion": "[variables('apiVersion')]",
+      "apiVersion": "2015-06-15",
       "type": "Microsoft.Network/publicIPAddresses",
       "name": "[variables('publicIPAddressName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "comments": "Tableau Server Public IP Address",
+      "tags": {
+        "quickstartName": "[parameters('quickstartTags').name]",
+        "provider": "[parameters('tableauTags').provider]"
+      },
       "properties": {
-        "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
-        "dnsSettings": {
-          "domainNameLabel": "[parameters('dnsNamePrefix')]"
-        }
+        "publicIPAllocationMethod": "[variables('publicIPAddressType')]"
       }
     },
     {
-      "apiVersion": "[variables('apiVersion')]",
+      "apiVersion": "2015-06-15",
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[variables('nicName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "comments": "Tableau Server nic name",
+      "tags": {
+        "quickstartName": "[parameters('quickstartTags').name]",
+        "provider": "[parameters('tableauTags').provider]"
+      },
       "dependsOn": [
         "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]"
-        ],
+      ],
       "properties": {
         "ipConfigurations": [
           {
@@ -114,11 +138,15 @@
       }
     },
     {
-      "apiVersion": "[variables('apiVersion')]",
+      "apiVersion":  "2017-03-30", 
       "type": "Microsoft.Compute/virtualMachines",
       "name": "[variables('vmName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "comments": "Tableau Server VM",
+      "tags": {
+        "quickstartName": "[parameters('quickstartTags').name]",
+        "provider": "[parameters('tableauTags').provider]"
+      },
       "dependsOn": [
         "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
         "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
@@ -145,21 +173,16 @@
             "version": "latest"
           },
           "osDisk": {
-            "name": "osdisk",
-            "vhd": {
-              "uri": "[concat('http://',variables('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/',variables('OSDiskName'),'.vhd')]"
-            },
+            "name": "[concat(variables('vmName'),'_OSDisk')]", 
             "caching": "ReadWrite",
             "createOption": "FromImage"
           },
           "dataDisks": [
             {
-              "name": "datadisk1",
+              "name": "[concat(variables('vmName'),'_DataDisk1')]", 
               "diskSizeGB": "[variables('sizeOfDiskInGB')]",
               "lun": 0,
-              "vhd": {
-                "uri": "[concat('http://',variables('storageAccountName'),'.blob.core.windows.net/',variables('vmStorageAccountContainerName'),'/',variables('dataDisk1VhdName'),'.vhd')]"
-              },
+             
               "createOption": "Empty"
             }
           ]

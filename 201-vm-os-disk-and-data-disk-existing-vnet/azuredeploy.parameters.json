@@ -3,22 +3,22 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "existingVirtualNetworkName": {
-            "value": "VNetName"
+            "value": "GEN-VNET-NAME"
         },
-        "existingVirtualNetworkResourceGroup": {
-            "value": "VNETResourceGroupName"
-        },
+        "existingVirtualNetworkResourceGroup": {  
+            "value": "GEN-VNET-RESOURCEGROUP-NAME" 
+        }, 
         "subnetName": {
-            "value": "VNETsubnetName"
+            "value": "GEN-VNET-SUBNET1-NAME"
         },
         "osDiskVhdUri": {
-            "value": "customOSvhdlocation"
+            "value": "GEN-SPECIALIZED-WINVHD-URI"
         },
         "dataDisk0VhdUri": {
-            "value": "customDataDisk0vhdlocation"
+            "value": "GEN-DATAVHD-URI"
         },
         "vmName": {
-          "value": "NameOfVM"
+            "value": "GEN-UNIQUE-8"
         },
         "osType": {
             "value": "Windows"

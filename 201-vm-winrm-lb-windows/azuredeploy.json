@@ -1,5 +1,5 @@
 {
-  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
   "contentVersion": "1.0.0.0",
   "parameters": {
     "adminUsername": {
@@ -67,8 +67,7 @@
     "subnetPrefix": "10.0.0.0/24",
     "publicIPAddressType": "Dynamic",
     "vnetName": "myVNET",
-    "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('vnetName'))]",
-    "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables ('subnetName'))]",
+    "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables ('subnetName'))]",
     "publicIPAddressName": "myPublicIP",
     "publicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]",
     "lbName": "myLB",
@@ -91,13 +90,13 @@
       "apiVersion": "2016-04-30-preview",
       "location": "[resourceGroup().location]",
       "properties": {
-        "platformFaultDomainCount": "2",
-        "platformUpdateDomainCount": "2",
-        "managed": "true"
+        "platformFaultDomainCount": 2,
+        "platformUpdateDomainCount": 2,
+        "managed": true
       }
     },
     {
-      "apiVersion": "[variables('apiVersion')]",
+      "apiVersion": "2015-06-15",
       "type": "Microsoft.Network/publicIPAddresses",
       "name": "[variables('publicIPAddressName')]",
       "location": "[resourceGroup().location]",
@@ -109,7 +108,7 @@
       }
     },
     {
-      "apiVersion": "[variables('apiVersion')]",
+      "apiVersion": "2015-06-15",
       "type": "Microsoft.Network/virtualNetworks",
       "name": "[variables('vnetName')]",
       "location": "[resourceGroup().location]",
@@ -130,7 +129,7 @@
       }
     },
     {
-      "apiVersion": "[variables('apiVersion')]",
+      "apiVersion": "2015-06-15",
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[concat(variables('primaryNicNamePrefix'), copyindex())]",
       "location": "[resourceGroup().location]",
@@ -170,7 +169,7 @@
       }
     },
     {
-      "apiVersion": "[variables('apiVersion')]",
+      "apiVersion": "2015-06-15",
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[concat(variables('secondaryNicNamePrefix'), copyindex())]",
       "location": "[resourceGroup().location]",
@@ -210,7 +209,7 @@
       }
     },
     {
-      "apiVersion": "[variables('apiVersion')]",
+      "apiVersion": "2015-06-15",
       "name": "[variables('lbName')]",
       "type": "Microsoft.Network/loadBalancers",
       "location": "[resourceGroup().location]",
@@ -240,7 +239,7 @@
               "frontendIPConfiguration": {
                 "id": "[variables('frontEndIPConfigID')]"
               },
-              "protocol": "tcp",
+              "protocol": "Tcp",
               "frontendPort": 50001,
               "backendPort": 3389,
               "enableFloatingIP": false
@@ -252,7 +251,7 @@
               "frontendIPConfiguration": {
                 "id": "[variables('frontEndIPConfigID')]"
               },
-              "protocol": "tcp",
+              "protocol": "Tcp",
               "frontendPort": 50002,
               "backendPort": 3389,
               "enableFloatingIP": false
@@ -264,7 +263,7 @@
               "frontendIPConfiguration": {
                 "id": "[variables('frontEndIPConfigID')]"
               },
-              "protocol": "tcp",
+              "protocol": "Tcp",
               "frontendPort": 40001,
               "backendPort": 5986,
               "enableFloatingIP": false
@@ -276,7 +275,7 @@
               "frontendIPConfiguration": {
                 "id": "[variables('frontEndIPConfigID')]"
               },
-              "protocol": "tcp",
+              "protocol": "Tcp",
               "frontendPort": 40002,
               "backendPort": 5986,
               "enableFloatingIP": false
@@ -288,7 +287,7 @@
               "frontendIPConfiguration": {
                 "id": "[variables('frontEndIPConfigID')]"
               },
-              "protocol": "tcp",
+              "protocol": "Tcp",
               "frontendPort": 50003,
               "backendPort": 3389,
               "enableFloatingIP": false
@@ -300,7 +299,7 @@
               "frontendIPConfiguration": {
                 "id": "[variables('frontEndIPConfigID')]"
               },
-              "protocol": "tcp",
+              "protocol": "Tcp",
               "frontendPort": 50004,
               "backendPort": 3389,
               "enableFloatingIP": false
@@ -312,7 +311,7 @@
               "frontendIPConfiguration": {
                 "id": "[variables('frontEndIPConfigID')]"
               },
-              "protocol": "tcp",
+              "protocol": "Tcp",
               "frontendPort": 40003,
               "backendPort": 5986,
               "enableFloatingIP": false
@@ -324,7 +323,7 @@
               "frontendIPConfiguration": {
                 "id": "[variables('frontEndIPConfigID')]"
               },
-              "protocol": "tcp",
+              "protocol": "Tcp",
               "frontendPort": 40004,
               "backendPort": 5986,
               "enableFloatingIP": false
@@ -341,7 +340,7 @@
               "backendAddressPool": {
                 "id": "[variables('lbPoolID')]"
               },
-              "protocol": "tcp",
+              "protocol": "Tcp",
               "frontendPort": 80,
               "backendPort": 80,
               "enableFloatingIP": false,
@@ -356,10 +355,10 @@
           {
             "name": "tcpProbe",
             "properties": {
-              "protocol": "tcp",
+              "protocol": "Tcp",
               "port": 80,
-              "intervalInSeconds": "5",
-              "numberOfProbes": "2"
+              "intervalInSeconds": 5,
+              "numberOfProbes": 2
             }
           }
         ]
@@ -389,7 +388,7 @@
           "vmSize": "[parameters('vmSize')]"
         },
         "osProfile": {
-          "computername": "[concat(parameters('primaryVmNamePrefix'), copyIndex())]",
+          "computerName": "[concat(parameters('primaryVmNamePrefix'), copyIndex())]",
           "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[parameters('adminPassword')]"
         },
@@ -461,7 +460,7 @@
           "vmSize": "[parameters('vmSize')]"
         },
         "osProfile": {
-          "computername": "[concat(parameters('secondaryVmNamePrefix'), copyIndex())]",
+          "computerName": "[concat(parameters('secondaryVmNamePrefix'), copyIndex())]",
           "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[parameters('adminPassword')]"
         },

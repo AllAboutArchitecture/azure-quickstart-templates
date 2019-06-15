@@ -1,9 +1,9 @@
 {
-  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.1",
   "parameters": {
-    "resourceAPIVersion":{
-      "type":"string"
+    "resourceAPIVersion": {
+      "type": "string"
     },
     "networkSpec": {
       "type": "object"
@@ -13,29 +13,49 @@
     },
     "dataNodeASName": {
       "type": "string"
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
     }
   },
   "variables": {},
   "resources": [
     {
-      "apiVersion": "[parameters('resourceAPIVersion')]",
       "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion":"2017-12-01",
       "name": "[parameters('masterNodeASName')]",
-      "location": "[resourceGroup().location]",
-      "properties": { }
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Aligned"
+        },
+        "properties": { 
+        "platformFaultDomainCount": 2,
+        "platformUpdateDomainCount": 5
+        }
+        
     },
     {
-      "apiVersion": "[parameters('resourceAPIVersion')]",
       "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion":"2017-12-01",
       "name": "[parameters('dataNodeASName')]",
-      "location": "[resourceGroup().location]",
-      "properties": { }
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Aligned"
+        },
+        "properties": { 
+        "platformFaultDomainCount": 2,
+        "platformUpdateDomainCount": 5
+        }
+        
     },
     {
-      "apiVersion": "[parameters('resourceAPIVersion')]",
       "type": "Microsoft.Network/networkSecurityGroups",
       "name": "[concat(parameters('networkSpec').virtualNetworkName, '-sg')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "properties": {
         "securityRules": [
           {
@@ -56,13 +76,12 @@
       }
     },
     {
-      "apiVersion": "[parameters('resourceAPIVersion')]",
       "type": "Microsoft.Network/virtualNetworks",
       "name": "[parameters('networkSpec').virtualNetworkName]",
       "dependsOn": [
         "[concat('Microsoft.Network/networkSecurityGroups/', parameters('networkSpec').virtualNetworkName, '-sg')]"
       ],
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "properties": {
         "addressSpace": {
           "addressPrefixes": [

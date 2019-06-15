@@ -1,5 +1,5 @@
 {
-  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
   "contentVersion": "1.0.0.0",
   "parameters": {
     "vmSku": {
@@ -11,11 +11,12 @@
     },
     "windowsOSVersion": {
       "type": "string",
-      "defaultValue": "2012-R2-Datacenter",
+      "defaultValue": "2016-Datacenter",
       "allowedValues": [
         "2008-R2-SP1",
         "2012-Datacenter",
-        "2012-R2-Datacenter"
+        "2012-R2-Datacenter",
+        "2016-Datacenter"
       ],
       "metadata": {
         "description": "The Windows version for the VM. This will pick a fully patched image of this given Windows version. Allowed values: 2008-R2-SP1, 2012-Datacenter, 2012-R2-Datacenter."
@@ -53,7 +54,7 @@
     "longNamingInfix": "[toLower(parameters('vmssName'))]",
     "jumpBoxName": "[concat(variables('namingInfix'), 'jbox')]",
     "jumpBoxSAName": "[concat(uniqueString(concat(resourceGroup().id, variables('newStorageAccountSuffix'), 'jumpboxsa')), 'jb')]",
-    "jumpBoxOSDiskName": "[concat(variables('jumpBoxName'), 'osdisk')]",
+    "jumpBoxOSDiskName": "[concat(variables('jumpBoxName'), '_OSDisk')]",
     "jumpBoxVHDContainerName": "[concat(variables('jumpBoxName'), 'vhd')]",
     "jumpBoxIPConfigName": "[concat(variables('jumpBoxName'), 'ipconfig')]",
     "jumpBoxNicName": "[concat(variables('jumpBoxName'), 'nic')]",
@@ -63,10 +64,8 @@
     "subnetPrefix": "10.0.0.0/24",
     "virtualNetworkName": "[concat(variables('namingInfix'), 'vnet')]",
     "subnetName": "[concat(variables('namingInfix'), 'subnet')]",
-    "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworkName'))]",
-    "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('subnetName'))]",
+    "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
     "publicIPAddressName": "[concat(variables('namingInfix'), 'pip')]",
-    "publicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]",
     "nicName": "[concat(variables('namingInfix'), 'nic')]",
     "ipConfigName": "[concat(variables('namingInfix'), 'ipconfig')]",
     "osType": {
@@ -75,17 +74,14 @@
       "sku": "[parameters('windowsOSVersion')]",
       "version": "latest"
     },
-    "imageReference": "[variables('osType')]",
-    "computeApiVersion": "2016-04-30-preview",
-    "networkApiVersion": "2016-03-30",
-    "storageApiVersion": "2015-06-15"
+    "imageReference": "[variables('osType')]"
   },
   "resources": [
     {
       "type": "Microsoft.Network/virtualNetworks",
       "name": "[variables('virtualNetworkName')]",
       "location": "[resourceGroup().location]",
-      "apiVersion": "[variables('networkApiVersion')]",
+      "apiVersion": "2017-04-01",
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -106,7 +102,7 @@
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[variables('jumpBoxSAName')]",
       "location": "[resourceGroup().location]",
-      "apiVersion": "[variables('storageApiVersion')]",
+      "apiVersion": "2015-06-15",
       "properties": {
         "accountType": "[variables('storageAccountType')]"
       }
@@ -115,7 +111,7 @@
       "type": "Microsoft.Network/publicIPAddresses",
       "name": "[variables('publicIPAddressName')]",
       "location": "[resourceGroup().location]",
-      "apiVersion": "[variables('networkApiVersion')]",
+      "apiVersion": "2017-04-01",
       "properties": {
         "publicIPAllocationMethod": "Dynamic",
         "dnsSettings": {
@@ -127,7 +123,7 @@
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[variables('jumpBoxNicName')]",
       "location": "[resourceGroup().location]",
-      "apiVersion": "[variables('networkApiVersion')]",
+      "apiVersion": "2017-04-01",
       "dependsOn": [
         "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
         "[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]"
@@ -153,7 +149,7 @@
       "type": "Microsoft.Compute/virtualMachines",
       "name": "[variables('jumpBoxName')]",
       "location": "[resourceGroup().location]",
-      "apiVersion": "[variables('computeApiVersion')]",
+      "apiVersion": "2017-03-30",
       "dependsOn": [
         "[concat('Microsoft.Storage/storageAccounts/', variables('jumpBoxSAName'))]",
         "[concat('Microsoft.Network/networkInterfaces/', variables('jumpBoxNicName'))]"
@@ -171,9 +167,6 @@
           "imageReference": "[variables('imageReference')]",
           "osDisk": {
             "name": "[variables('jumpBoxOSDiskName')]",
-            "vhd": {
-              "uri": "[concat('http://',variables('jumpBoxSAName'),'.blob.core.windows.net/',variables('jumpBoxVHDContainerName'),'/',variables('jumpBoxOSDiskName'),'.vhd')]"
-            },
             "caching": "ReadWrite",
             "createOption": "FromImage"
           }
@@ -187,7 +180,7 @@
         },
         "diagnosticsProfile": {
           "bootDiagnostics": {
-            "enabled": "true",
+            "enabled": true,
             "storageUri": "[concat('http://',variables('jumpBoxSAName'),'.blob.core.windows.net')]"
           }
         }
@@ -197,7 +190,7 @@
       "type": "Microsoft.Compute/virtualMachineScaleSets",
       "name": "[variables('namingInfix')]",
       "location": "[resourceGroup().location]",
-      "apiVersion": "[variables('computeApiVersion')]",
+      "apiVersion": "2017-03-30",
       "dependsOn": [
         "[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]"
       ],
@@ -214,7 +207,8 @@
         "virtualMachineProfile": {
           "storageProfile": {
             "osDisk": {
-              "createOption": "FromImage"
+              "createOption": "FromImage",
+              "caching": "ReadWrite"
             },
             "imageReference": "[variables('imageReference')]"
           },
@@ -228,7 +222,7 @@
               {
                 "name": "[variables('nicName')]",
                 "properties": {
-                  "primary": "true",
+                  "primary": true,
                   "ipConfigurations": [
                     {
                       "name": "[variables('ipConfigName')]",
